@@ -159,6 +159,12 @@ async function openViewModal(ticket) {
     assignTicket(ticket.id, userId);
   };
 
+  populateAssigneeDropdown(ticket.assigned_user ? ticket.assigned_user.id : 0);
+  document.getElementById("ticket-assignee").onchange = () => {
+    const userId = parseInt(document.getElementById("ticket-assignee").value);
+    assignTicket(ticket.id, userId);
+  };
+
   document.getElementById("view-modal").classList.remove("hidden");
 }
 

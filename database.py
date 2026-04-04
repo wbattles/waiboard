@@ -39,7 +39,10 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     projects = relationship("Project", secondary=user_projects, back_populates="users")
+<<<<<<< HEAD
     assigned_tickets = relationship("Ticket", back_populates="assigned_user")
+=======
+>>>>>>> 7167e099f0a435b47feaf87e8d94e34ab25c8b3a
 
 
 class Project(Base):
@@ -68,7 +71,11 @@ class Ticket(Base):
     assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     project = relationship("Project", back_populates="tickets")
+<<<<<<< HEAD
     assigned_user = relationship("User", back_populates="assigned_tickets")
+=======
+    assigned_user = relationship("User")
+>>>>>>> 7167e099f0a435b47feaf87e8d94e34ab25c8b3a
 
 
 def init_db():
