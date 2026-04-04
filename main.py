@@ -13,6 +13,7 @@ from auth import (
     get_current_user,
     get_admin_user,
     get_password_hash,
+    verify_password,
     create_admin_if_none_exists,
     ACCESS_TOKEN_EXPIRE_HOURS,
 )
@@ -134,6 +135,24 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "username": current_user.username,
         "is_admin": current_user.is_admin,
     }
+
+
+class MyPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@app.patch("/api/me/password")
+def change_my_password(
+    data: MyPasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="current password is incorrect")
+    current_user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"message": "password updated"}
 
 
 @app.get("/api/users")
@@ -541,6 +560,19 @@ def serve_admin(request: Request):
 @app.get("/login")
 def serve_login():
     return FileResponse("static/login.html")
+
+
+@app.get("/settings")
+def serve_settings(request: Request):
+    try:
+        from auth import get_current_user
+
+        user = get_current_user(
+            session_token=request.cookies.get("session_token"), db=next(get_db())
+        )
+        return FileResponse("static/settings.html")
+    except HTTPException:
+        return RedirectResponse("/login")
 
 
 # Mount static files for CSS/JS (these don't need auth)

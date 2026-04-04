@@ -377,6 +377,61 @@ main {
   box-sizing: border-box;
 }
 
+.settings-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  height: 100%;
+}
+
+.settings-left {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-panel {
+  padding: 20px;
+  border: 1px solid #000;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-panel h3 {
+  margin-bottom: 4px;
+}
+
+.settings-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-panel input[type="password"] {
+  border: 1px solid #000;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-panel label {
+  font-size: 0.875rem;
+}
+
+.settings-panel select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-panel button {
+  margin-top: 4px;
+}
+
 .users-layout,
 .projects-layout {
   display: grid;
@@ -445,7 +500,8 @@ main {
 }
 
 #users-container,
-#projects-container {
+#projects-container,
+#my-projects-container {
   padding: 0 20px 20px 20px;
   flex: 1;
   overflow-y: auto;
@@ -515,3 +571,133 @@ main {
 }
 
 /* Remove button styling - use browser defaults */
+
+/* dark mode */
+
+body.dark {
+  background: #000;
+  color: #fff;
+}
+
+body.dark header {
+  border-bottom-color: #fff;
+}
+
+body.dark .column {
+  border-right-color: #fff;
+}
+
+body.dark .ticket {
+  border-color: #fff;
+}
+
+body.dark .ticket-code {
+  border-color: #fff;
+  color: #fff;
+}
+
+body.dark .modal-box {
+  background: #000;
+  border-color: #fff;
+}
+
+body.dark .modal-box input,
+body.dark .modal-box textarea {
+  border-color: #fff;
+  background: #000;
+  color: #fff;
+}
+
+body.dark .admin-tabs {
+  border-bottom-color: #fff;
+  background: #000;
+}
+
+body.dark .tab-btn.active {
+  border-bottom-color: #fff;
+}
+
+body.dark .create-user-panel,
+body.dark .create-project-panel,
+body.dark .settings-panel,
+body.dark .settings-section,
+body.dark .user-list-panel {
+  border-color: #fff;
+}
+
+body.dark .user-item {
+  border-bottom-color: #fff;
+}
+
+body.dark .user-list-panel h3 {
+  border-bottom-color: #fff;
+}
+
+body.dark .admin-badge,
+body.dark .minion-badge {
+  border-color: #fff;
+}
+
+body.dark .user-checkbox-list {
+  border-color: #fff;
+}
+
+body.dark .login-box {
+  border-color: #fff;
+}
+
+body.dark .login-box input {
+  border-color: #fff;
+  background: #000;
+  color: #fff;
+}
+
+body.dark .settings-panel input[type="password"] {
+  border-color: #fff;
+  background: #000;
+  color: #fff;
+}
+
+body.dark .user-activity {
+  color: #999;
+}
+
+body.dark .tab-btn {
+  color: #fff;
+}
+
+body.dark .settings-panel label {
+  color: #fff;
+}
+
+body.dark .settings-panel select {
+  background: #000;
+  color: #fff;
+}
+
+body.dark .error {
+  color: #fff;
+}
+
+body.dark .view-title,
+body.dark .view-desc {
+  color: #fff;
+}
+
+body.dark .modal-box h2 {
+  color: #fff;
+}
+
+body.dark .modal-box select {
+  background: #000;
+  color: #fff;
+}
+
+body.dark .ticket-bottom select {
+  background: #000;
+  color: #fff;
+}
+
+body.dark #confirm-message {
+  color: #fff;
+}
