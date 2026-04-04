@@ -7,9 +7,59 @@ const COLUMNS = [
 
 let editingId = null;
 let viewingTicket = null;
+let currentProjectId = null;
+let projectUsers = [];
+
+async function loadProjects() {
+  const res = await fetch("/api/projects");
+  const projects = await res.json();
+  
+  const selector = document.getElementById("project-selector");
+  selector.innerHTML = '<option value="">select project</option>' +
+    projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  
+  // Auto-select first project if available
+  if (projects.length > 0) {
+    currentProjectId = projects[0].id;
+    selector.value = currentProjectId;
+    loadProjectUsers();
+    loadTickets();
+  }
+}
+
+function switchProject() {
+  const selector = document.getElementById("project-selector");
+  currentProjectId = selector.value ? parseInt(selector.value) : null;
+  if (currentProjectId) {
+    loadProjectUsers();
+    loadTickets();
+  } else {
+    projectUsers = [];
+    // Clear board if no project selected
+    COLUMNS.forEach(col => {
+      document.getElementById(`tickets-${col.id}`).innerHTML = "";
+    });
+  }
+}
+
+async function loadProjectUsers() {
+  if (!currentProjectId) { projectUsers = []; return; }
+  try {
+    const res = await fetch(`/api/projects/${currentProjectId}/users`);
+    projectUsers = await res.json();
+  } catch { projectUsers = []; }
+}
+
+function populateAssigneeDropdown(selectedUserId) {
+  const select = document.getElementById("ticket-assignee");
+  select.innerHTML = '<option value="0">unassigned</option>' +
+    projectUsers.map(u =>
+      `<option value="${u.id}" ${u.id === selectedUserId ? 'selected' : ''}>${u.username}</option>`
+    ).join('');
+}
 
 async function loadTickets() {
-  const res = await fetch("/api/tickets");
+  const res = await fetch(`/api/tickets?project_id=${currentProjectId}`);
   const tickets = await res.json();
 
   COLUMNS.forEach(col => {
@@ -26,21 +76,28 @@ function renderTicket(ticket) {
   const div = document.createElement("div");
   div.className = "ticket";
 
-  const titleRow = document.createElement("div");
-  titleRow.className = "ticket-title-row";
-  
+  // top row: title + assigned user
+  const top = document.createElement("div");
+  top.className = "ticket-top";
+
   const title = document.createElement("div");
   title.className = "ticket-title";
   title.textContent = ticket.title;
-  
-  const assignedUser = document.createElement("div");
-  assignedUser.className = "ticket-assigned";
+  top.appendChild(title);
+
   if (ticket.assigned_user) {
-    assignedUser.textContent = ticket.assigned_user;
+    const assignee = document.createElement("span");
+    assignee.className = "ticket-assignee";
+    assignee.textContent = ticket.assigned_user.username;
+    top.appendChild(assignee);
   }
-  
-  titleRow.appendChild(title);
-  titleRow.appendChild(assignedUser);
+
+  div.appendChild(top);
+
+  const desc = document.createElement("div");
+  desc.className = "ticket-desc";
+  desc.innerText = ticket.description || "";
+  div.appendChild(desc);
 
   const bottom = document.createElement("div");
   bottom.className = "ticket-bottom";
@@ -55,19 +112,20 @@ function renderTicket(ticket) {
   });
   select.addEventListener("change", () => moveTicket(ticket.id, select.value));
 
-  div.appendChild(titleRow);
-
-  const desc = document.createElement("div");
-  desc.className = "ticket-desc";
-  desc.innerText = ticket.description || "";
-  div.appendChild(desc);
-
   const viewBtn = document.createElement("button");
   viewBtn.textContent = "view";
   viewBtn.addEventListener("click", () => openViewModal(ticket));
 
   bottom.appendChild(select);
   bottom.appendChild(viewBtn);
+
+  if (ticket.project) {
+    const code = document.createElement("span");
+    code.className = "ticket-code";
+    code.textContent = ticket.project.acronym;
+    bottom.appendChild(code);
+  }
+
   div.appendChild(bottom);
   container.appendChild(div);
 }
@@ -92,49 +150,13 @@ async function openViewModal(ticket) {
   });
   columnSelect.onchange = () => moveTicket(ticket.id, columnSelect.value);
 
-  // Setup assignment dropdown
-  await setupAssignmentDropdown(ticket);
+  populateAssigneeDropdown(ticket.assigned_user ? ticket.assigned_user.id : 0);
+  document.getElementById("ticket-assignee").onchange = () => {
+    const userId = parseInt(document.getElementById("ticket-assignee").value);
+    assignTicket(ticket.id, userId);
+  };
 
   document.getElementById("view-modal").classList.remove("hidden");
-}
-
-async function setupAssignmentDropdown(ticket) {
-  try {
-    const response = await fetch('/api/users');
-    const users = await response.json();
-    
-    const assignSelect = document.getElementById("view-assigned");
-    assignSelect.innerHTML = "";
-    
-    // Add unassigned option
-    const unassignedOpt = document.createElement("option");
-    unassignedOpt.value = "0";
-    unassignedOpt.textContent = "unassigned";
-    if (!ticket.assigned_user_id) unassignedOpt.selected = true;
-    assignSelect.appendChild(unassignedOpt);
-    
-    // Add user options
-    users.forEach(user => {
-      const opt = document.createElement("option");
-      opt.value = user.id;
-      opt.textContent = user.username;
-      if (ticket.assigned_user_id === user.id) opt.selected = true;
-      assignSelect.appendChild(opt);
-    });
-    
-    assignSelect.onchange = () => assignUser(ticket.id, parseInt(assignSelect.value));
-  } catch (error) {
-    console.error('Failed to load users:', error);
-  }
-}
-
-async function assignUser(ticketId, userId) {
-  await fetch(`/api/tickets/${ticketId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ assigned_user_id: userId }),
-  });
-  loadTickets();
 }
 
 function closeViewModal() {
@@ -147,6 +169,15 @@ async function moveTicket(id, column) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ column }),
+  });
+  loadTickets();
+}
+
+async function assignTicket(id, assigned_user_id) {
+  await fetch(`/api/tickets/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assigned_user_id }),
   });
   loadTickets();
 }
@@ -197,22 +228,41 @@ async function submitTicket() {
     return;
   }
 
-  if (editingId !== null) {
-    await fetch(`/api/tickets/${editingId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description }),
-    });
-  } else {
-    await fetch("/api/tickets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description }),
-    });
+  if (!currentProjectId && editingId === null) {
+    alert("No project selected");
+    return;
   }
 
-  closeModal();
-  loadTickets();
+  try {
+    if (editingId !== null) {
+      const response = await fetch(`/api/tickets/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error updating ticket: ${error.detail || 'Unknown error'}`);
+        return;
+      }
+    } else {
+      const response = await fetch(`/api/tickets?project_id=${currentProjectId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        alert(`Error creating ticket: ${error.detail || 'Unknown error'}`);
+        return;
+      }
+    }
+
+    closeModal();
+    loadTickets();
+  } catch (error) {
+    alert(`Network error: ${error.message}`);
+  }
 }
 
 document.getElementById("view-modal").addEventListener("click", e => {
@@ -251,4 +301,4 @@ async function checkUserStatus() {
 
 // Initialize the app
 checkUserStatus();
-loadTickets();
+loadProjects();
