@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>waiboard - settings</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=3">
 </head>
 <body>
 
@@ -25,9 +25,9 @@
 
     <div class="tab-content">
       <section id="settings-tab" class="tab-panel active">
-        <div class="settings-layout">
+        <div class="users-layout">
           <div class="settings-left">
-            <div class="settings-panel">
+            <div class="create-user-panel">
               <h3>change password</h3>
               <form id="password-form">
                 <input type="password" id="pw-current" placeholder="current password" required />
@@ -44,7 +44,7 @@
               </div>
             </div>
 
-            <div class="settings-panel">
+            <div class="create-user-panel">
               <h3>display</h3>
               <div class="settings-row">
                 <label>font</label>
@@ -75,6 +75,19 @@
       </section>
     </div>
   </main>
+
+  <!-- api key modal -->
+  <div id="key-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>new api key</h2>
+      <p>copy this key — it will not be shown again:</p>
+      <input type="text" id="key-modal-value" readonly onclick="this.select()" />
+      <div class="modal-actions">
+        <button onclick="copyKey()">copy</button>
+        <button onclick="closeKeyModal()">close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/prefs.js"></script>
   <script src="/settings.js"></script>
