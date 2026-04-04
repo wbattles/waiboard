@@ -66,9 +66,21 @@ class Ticket(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    ticket_number = Column(Integer, nullable=True)
 
     project = relationship("Project", back_populates="tickets")
     assigned_user = relationship("User", back_populates="assigned_tickets")
+
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
 
 
 def init_db():
@@ -96,6 +108,19 @@ def _migrate():
         cursor.execute(
             "ALTER TABLE tickets ADD COLUMN assigned_user_id INTEGER REFERENCES users(id)"
         )
+
+    if "ticket_number" not in existing:
+        cursor.execute("ALTER TABLE tickets ADD COLUMN ticket_number INTEGER")
+        # backfill: assign numbers per project
+        cursor.execute("SELECT id, project_id FROM tickets ORDER BY project_id, id")
+        rows = cursor.fetchall()
+        counters = {}
+        for tid, pid in rows:
+            counters[pid] = counters.get(pid, 0) + 1
+            cursor.execute(
+                "UPDATE tickets SET ticket_number = ? WHERE id = ?",
+                (counters[pid], tid),
+            )
 
     conn.commit()
     conn.close()
