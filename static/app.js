@@ -48,7 +48,7 @@ function renderTicket(ticket) {
   if (ticket.description) {
     const desc = document.createElement("div");
     desc.className = "ticket-desc";
-    desc.textContent = ticket.description;
+    desc.innerText = ticket.description;
     div.appendChild(desc);
   }
 
@@ -68,7 +68,7 @@ function openViewModal(ticket) {
   viewingTicket = ticket;
 
   document.getElementById("view-title").textContent = ticket.title;
-  document.getElementById("view-desc").textContent = ticket.description;
+  document.getElementById("view-desc").innerText = ticket.description;
 
   const select = document.getElementById("view-column");
   select.innerHTML = "";

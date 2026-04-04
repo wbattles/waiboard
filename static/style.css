@@ -77,12 +77,23 @@ main {
   overflow-x: hidden;
   line-height: 1.4;
   word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .ticket-bottom {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.ticket-bottom select {
+  flex: 1;
+  min-width: 0;
+  max-width: 120px;
+}
+
+.ticket-bottom button {
   flex-shrink: 0;
 }
 
@@ -101,6 +112,7 @@ main {
   overflow-y: auto;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* shared modal */
