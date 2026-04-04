@@ -63,10 +63,25 @@ async function generateApiKey() {
   const response = await fetch('/api/me/api-keys', { method: 'POST' });
   if (response.ok) {
     const data = await response.json();
-    prompt('copy this key — it will not be shown again:', data.key);
+    document.getElementById('key-modal-value').value = data.key;
+    document.getElementById('key-modal').classList.remove('hidden');
     loadApiKeys();
   }
 }
+
+function copyKey() {
+  const input = document.getElementById('key-modal-value');
+  input.select();
+  navigator.clipboard.writeText(input.value);
+}
+
+function closeKeyModal() {
+  document.getElementById('key-modal').classList.add('hidden');
+}
+
+document.getElementById('key-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('key-modal')) closeKeyModal();
+});
 
 async function deleteApiKey(id) {
   const response = await fetch(`/api/me/api-keys/${id}`, { method: 'DELETE' });
