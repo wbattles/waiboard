@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>waiboard - settings</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <span class="app-name">waiboard settings</span>
+    </div>
+    <div class="header-actions">
+      <button onclick="window.location.href='/'">back to board</button>
+      <button onclick="logout()">logout</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <nav class="admin-tabs">
+      <button class="tab-btn active" onclick="showTab('settings')">settings</button>
+    </nav>
+
+    <div class="tab-content">
+      <section id="settings-tab" class="tab-panel active">
+        <div class="settings-layout">
+          <div class="settings-left">
+            <div class="settings-panel">
+              <h3>change password</h3>
+              <form id="password-form">
+                <input type="password" id="pw-current" placeholder="current password" required />
+                <input type="password" id="pw-new" placeholder="new password" required />
+                <button type="submit">save password</button>
+              </form>
+            </div>
+
+            <div class="settings-panel">
+              <h3>display</h3>
+              <label>font</label>
+              <select id="font-select" onchange="changeFont()">
+                <option value="system-ui, -apple-system, sans-serif">system (default)</option>
+                <option value="Georgia, serif">georgia</option>
+                <option value="Courier New, monospace">courier new</option>
+                <option value="Verdana, sans-serif">verdana</option>
+                <option value="Trebuchet MS, sans-serif">trebuchet ms</option>
+                <option value="Palatino, serif">palatino</option>
+              </select>
+              <label>mode</label>
+              <select id="mode-select" onchange="changeMode()">
+                <option value="light">light</option>
+                <option value="dark">dark</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="user-list-panel">
+            <h3>my projects</h3>
+            <div id="my-projects-container"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/prefs.js"></script>
+  <script src="/settings.js"></script>
+</body>
+</html>
