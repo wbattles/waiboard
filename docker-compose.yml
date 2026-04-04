@@ -1,0 +1,9 @@
+services:
+  waiboard:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_PATH=/data/waiboard.db

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>waiboard</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header>
+    <button onclick="openModal()">new</button>
+    <span class="app-name">waiboard</span>
+  </header>
+
+  <main>
+    <div class="board">
+      <div class="column">
+        <h2>to do</h2>
+        <div class="tickets" id="tickets-todo"></div>
+      </div>
+      <div class="column">
+        <h2>in progress</h2>
+        <div class="tickets" id="tickets-inprogress"></div>
+      </div>
+      <div class="column">
+        <h2>testing</h2>
+        <div class="tickets" id="tickets-testing"></div>
+      </div>
+      <div class="column">
+        <h2>done</h2>
+        <div class="tickets" id="tickets-done"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- view modal -->
+  <div id="view-modal" class="modal hidden">
+    <div class="modal-box">
+      <div id="view-title" class="view-title"></div>
+      <div id="view-desc" class="view-desc"></div>
+      <select id="view-column"></select>
+      <div class="modal-actions">
+        <button onclick="openEditFromView()">edit</button>
+        <button onclick="deleteFromView()">delete</button>
+        <button onclick="closeViewModal()">close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- create / edit modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h2 id="modal-heading">new</h2>
+      <input type="text" id="ticket-title" placeholder="title" autocomplete="off" />
+      <textarea id="ticket-description" placeholder="description"></textarea>
+      <div class="modal-actions">
+        <button onclick="submitTicket()">save</button>
+        <button onclick="closeModal()">cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
