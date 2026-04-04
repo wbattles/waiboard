@@ -150,15 +150,6 @@ async function openViewModal(ticket) {
   });
   columnSelect.onchange = () => moveTicket(ticket.id, columnSelect.value);
 
-  // Setup assignment dropdown
-  await setupAssignmentDropdown(ticket);
-
-  populateAssigneeDropdown(ticket.assigned_user ? ticket.assigned_user.id : 0);
-  document.getElementById("ticket-assignee").onchange = () => {
-    const userId = parseInt(document.getElementById("ticket-assignee").value);
-    assignTicket(ticket.id, userId);
-  };
-
   populateAssigneeDropdown(ticket.assigned_user ? ticket.assigned_user.id : 0);
   document.getElementById("ticket-assignee").onchange = () => {
     const userId = parseInt(document.getElementById("ticket-assignee").value);
@@ -166,45 +157,6 @@ async function openViewModal(ticket) {
   };
 
   document.getElementById("view-modal").classList.remove("hidden");
-}
-
-async function setupAssignmentDropdown(ticket) {
-  try {
-    const response = await fetch('/api/users');
-    const users = await response.json();
-    
-    const assignSelect = document.getElementById("view-assigned");
-    assignSelect.innerHTML = "";
-    
-    // Add unassigned option
-    const unassignedOpt = document.createElement("option");
-    unassignedOpt.value = "0";
-    unassignedOpt.textContent = "unassigned";
-    if (!ticket.assigned_user_id) unassignedOpt.selected = true;
-    assignSelect.appendChild(unassignedOpt);
-    
-    // Add user options
-    users.forEach(user => {
-      const opt = document.createElement("option");
-      opt.value = user.id;
-      opt.textContent = user.username;
-      if (ticket.assigned_user_id === user.id) opt.selected = true;
-      assignSelect.appendChild(opt);
-    });
-    
-    assignSelect.onchange = () => assignUser(ticket.id, parseInt(assignSelect.value));
-  } catch (error) {
-    console.error('Failed to load users:', error);
-  }
-}
-
-async function assignUser(ticketId, userId) {
-  await fetch(`/api/tickets/${ticketId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ assigned_user_id: userId }),
-  });
-  loadTickets();
 }
 
 function closeViewModal() {

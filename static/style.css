@@ -67,14 +67,6 @@ main {
   overflow: hidden;
 }
 
-.ticket-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 .ticket-title {
   font-size: 0.875rem;
   font-weight: 500;
@@ -91,15 +83,6 @@ main {
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  min-width: 0;
-}
-
-.ticket-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
 }
 
 .ticket-assignee {
@@ -115,22 +98,6 @@ main {
   flex-shrink: 0;
   font-weight: 500;
   margin-left: auto;
-}
-
-.ticket-assignee {
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.ticket-code {
-  font-size: 0.7rem;
-  color: #000;
-  border: 1px solid #000;
-  padding: 1px 3px;
-  flex-shrink: 0;
-  font-weight: 500;
-  margin-left: auto;
-}
 }
 
 .ticket-desc {
@@ -229,11 +196,6 @@ main {
 .modal-box textarea {
   height: 90px;
   resize: vertical;
-}
-
-.assignment-dropdown {
-  max-height: 120px;
-  overflow-y: auto;
 }
 
 .modal-actions {
