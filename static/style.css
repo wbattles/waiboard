@@ -138,7 +138,6 @@ main {
 
 .view-desc {
   font-size: 0.875rem;
-  min-height: 20px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -301,12 +300,6 @@ main {
   text-align: center;
 }
 
-.info {
-  font-size: 0.8rem;
-  text-align: center;
-  line-height: 1.4;
-}
-
 .hidden {
   display: none;
 }
@@ -375,12 +368,6 @@ main {
   border: 1px solid #000;
   width: 100%;
   box-sizing: border-box;
-}
-
-.settings-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 24px;
 }
 
 .settings-left {
@@ -471,10 +458,6 @@ main {
 .api-keys-footer {
   padding: 8px 20px 12px 20px;
   flex-shrink: 0;
-}
-
-body.dark .api-key-item {
-  border-bottom-color: #fff;
 }
 
 .users-layout,
@@ -698,7 +681,9 @@ body.dark .login-box input {
   color: #fff;
 }
 
-body.dark .settings-panel input[type="password"] {
+body.dark .settings-panel input[type="password"],
+body.dark .create-user-panel input[type="password"],
+body.dark .create-user-panel input[type="text"] {
   border-color: #fff;
   background: #000;
   color: #fff;
@@ -712,11 +697,13 @@ body.dark .tab-btn {
   color: #fff;
 }
 
-body.dark .settings-panel label {
+body.dark .settings-panel label,
+body.dark .create-user-panel label {
   color: #fff;
 }
 
-body.dark .settings-panel select {
+body.dark .settings-panel select,
+body.dark .create-user-panel select {
   background: #000;
   color: #fff;
 }
@@ -746,4 +733,8 @@ body.dark .ticket-bottom select {
 
 body.dark #confirm-message {
   color: #fff;
+}
+
+body.dark .login-container {
+  background: #000;
 }
