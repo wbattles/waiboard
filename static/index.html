@@ -9,8 +9,14 @@
 <body>
 
   <header>
-    <button onclick="openModal()">new</button>
-    <span class="app-name">waiboard</span>
+    <div class="header-left">
+      <button onclick="openModal()">new</button>
+      <span class="app-name">waiboard</span>
+    </div>
+    <div class="header-actions">
+      <button id="admin-btn" onclick="window.location.href='/admin'" class="hidden">admin</button>
+      <button onclick="logout()">logout</button>
+    </div>
   </header>
 
   <main>
