@@ -1,7 +1,16 @@
 import os
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Boolean,
+    ForeignKey,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 db_path = os.getenv("DATABASE_PATH", "./waiboard.db")
 engine = create_engine(
@@ -28,7 +37,15 @@ class Ticket(Base):
     title = Column(String, nullable=False)
     description = Column(Text, default="")
     column = Column(String, default="todo")
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationship to User
+    assigned_user = relationship("User", back_populates="assigned_tickets")
+
+
+# Add back reference to User model
+User.assigned_tickets = relationship("Ticket", back_populates="assigned_user")
 
 
 def init_db():

@@ -67,13 +67,32 @@ main {
   overflow: hidden;
 }
 
+.ticket-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .ticket-title {
   font-size: 0.875rem;
   font-weight: 500;
-  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-assigned {
+  font-size: 0.75rem;
+  color: #666;
   flex-shrink: 0;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ticket-desc {
@@ -172,6 +191,11 @@ main {
 .modal-box textarea {
   height: 90px;
   resize: vertical;
+}
+
+.assignment-dropdown {
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .modal-actions {

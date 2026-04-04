@@ -64,8 +64,8 @@ async function createUser(event) {
     return;
   }
   
-  if (username.length > 30) {
-    showConfirmModal('error', 'username must be 30 characters or less', null);
+  if (username.length > 15) {
+    showConfirmModal('error', 'username must be 15 characters or less', null);
     return;
   }
   
