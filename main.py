@@ -561,14 +561,18 @@ def get_user_projects(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     if current_user.is_admin:
-        # Admin can see all projects
         projects = db.query(Project).all()
-        return [{"id": p.id, "name": p.name, "acronym": p.acronym} for p in projects]
     else:
-        return [
-            {"id": p.id, "name": p.name, "acronym": p.acronym}
-            for p in current_user.projects
-        ]
+        projects = current_user.projects
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "acronym": p.acronym,
+            "created_by_id": p.created_by_id,
+        }
+        for p in projects
+    ]
 
 
 @app.get("/api/projects/{project_id}/users")
@@ -581,6 +585,115 @@ def get_project_users(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return [{"id": u.id, "username": u.username} for u in project.users]
+
+
+@app.post("/api/me/projects", status_code=201)
+def create_my_project(
+    project: ProjectCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    existing = (
+        db.query(Project)
+        .filter((Project.name == project.name) | (Project.acronym == project.acronym))
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="project with this name or code already exists"
+        )
+
+    db_project = Project(
+        name=project.name, acronym=project.acronym, created_by_id=current_user.id
+    )
+
+    # Add the creating user
+    db_project.users.append(current_user)
+
+    # Add selected users
+    if project.user_ids:
+        users = db.query(User).filter(User.id.in_(project.user_ids)).all()
+        for u in users:
+            if u not in db_project.users:
+                db_project.users.append(u)
+
+    # Always add all admin users
+    admins = db.query(User).filter(User.is_admin == True).all()
+    for a in admins:
+        if a not in db_project.users:
+            db_project.users.append(a)
+
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+
+    return {
+        "id": db_project.id,
+        "name": db_project.name,
+        "acronym": db_project.acronym,
+        "users": [{"id": u.id, "username": u.username} for u in db_project.users],
+    }
+
+
+@app.patch("/api/me/projects/{project_id}")
+def update_my_project(
+    project_id: int,
+    project: ProjectUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_project = db.query(Project).filter(Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Must be the creator or an admin
+    if not current_user.is_admin:
+        if db_project.created_by_id != current_user.id:
+            raise HTTPException(
+                status_code=403, detail="only the project creator can edit this project"
+            )
+
+    if project.user_ids is not None:
+        users = db.query(User).filter(User.id.in_(project.user_ids)).all()
+        # Always keep admins
+        admins = db.query(User).filter(User.is_admin == True).all()
+        for a in admins:
+            if a not in users:
+                users.append(a)
+        db_project.users = users
+
+    db.commit()
+    db.refresh(db_project)
+
+    return {
+        "id": db_project.id,
+        "name": db_project.name,
+        "acronym": db_project.acronym,
+        "users": [{"id": u.id, "username": u.username} for u in db_project.users],
+    }
+
+
+@app.delete("/api/me/projects/{project_id}")
+def delete_my_project(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db_project = db.query(Project).filter(Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Must be the creator or an admin
+    if not current_user.is_admin:
+        if db_project.created_by_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="only the project creator can delete this project",
+            )
+
+    db.delete(db_project)
+    db.commit()
+    return {"message": "project deleted"}
 
 
 # Route handlers for protected pages

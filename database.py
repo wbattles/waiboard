@@ -49,7 +49,9 @@ class Project(Base):
     name = Column(String, unique=True, nullable=False)
     acronym = Column(String(3), unique=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
+    created_by = relationship("User", foreign_keys=[created_by_id])
     users = relationship("User", secondary=user_projects, back_populates="projects")
     tickets = relationship(
         "Ticket", back_populates="project", cascade="all, delete-orphan"
@@ -121,6 +123,18 @@ def _migrate():
                 "UPDATE tickets SET ticket_number = ? WHERE id = ?",
                 (counters[pid], tid),
             )
+
+    conn.commit()
+
+    # migrate projects table
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(projects)")
+    proj_cols = {row[1] for row in cursor.fetchall()}
+
+    if "created_by_id" not in proj_cols:
+        cursor.execute(
+            "ALTER TABLE projects ADD COLUMN created_by_id INTEGER REFERENCES users(id)"
+        )
 
     conn.commit()
     conn.close()
