@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  waiboard:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-04-04T01:29:30.34294871Z"
+    description: a simple kanban board
+    digest: 6b2eb6a75a58086ee79f47e578555c2fec2724b96a2b10f2b6618f29b8a009a2
+    name: waiboard
+    type: application
+    urls:
+    - https://github.com/wbattles/waiboard/releases/download/waiboard-0.1.1/waiboard-0.1.1.tgz
+    version: 0.1.1
+generated: "2026-04-04T01:29:30.342953018Z"
