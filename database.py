@@ -72,6 +72,32 @@ class Ticket(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    _migrate()
+
+
+def _migrate():
+    """add missing columns to existing tables"""
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # get existing columns on tickets table
+    cursor.execute("PRAGMA table_info(tickets)")
+    existing = {row[1] for row in cursor.fetchall()}
+
+    if "project_id" not in existing:
+        cursor.execute(
+            "ALTER TABLE tickets ADD COLUMN project_id INTEGER REFERENCES projects(id)"
+        )
+
+    if "assigned_user_id" not in existing:
+        cursor.execute(
+            "ALTER TABLE tickets ADD COLUMN assigned_user_id INTEGER REFERENCES users(id)"
+        )
+
+    conn.commit()
+    conn.close()
 
 
 def get_db():
