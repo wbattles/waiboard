@@ -5,6 +5,9 @@ function showTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`${tabName}-tab`).classList.add('active');
   event.target.classList.add('active');
+  if (tabName === 'projects') {
+    loadMyProjectsList();
+  }
 }
 
 // --- password ---
@@ -88,32 +91,151 @@ async function deleteApiKey(id) {
   if (response.ok) loadApiKeys();
 }
 
-// --- my projects ---
+// --- projects tab ---
 
-async function loadMyProjects() {
+let editingProjectId = null;
+let allUsers = [];
+let currentUser = null;
+
+async function loadCurrentUser() {
+  try {
+    const response = await fetch('/api/current-user');
+    if (response.ok) currentUser = await response.json();
+  } catch (error) {}
+}
+
+async function loadAllUsers() {
+  try {
+    const response = await fetch('/api/users');
+    if (response.ok) allUsers = await response.json();
+  } catch (error) {
+    console.error('Error loading users:', error);
+  }
+}
+
+async function loadMyProjectsList() {
   try {
     const response = await fetch('/api/projects');
     if (!response.ok) return;
     const projects = await response.json();
-    const container = document.getElementById('my-projects-container');
+    const container = document.getElementById('my-projects-list');
 
     if (projects.length === 0) {
-      container.innerHTML = '<div class="user-activity">no projects assigned</div>';
+      container.innerHTML = '<div class="user-activity">no projects</div>';
       return;
     }
 
-    container.innerHTML = projects.map(p => `
-      <div class="user-item">
-        <div class="user-main">
-          <div class="user-identity">
-            <div class="username">${p.name}</div>
-            <span class="admin-badge">${p.acronym}</span>
+    container.innerHTML = projects.map(p => {
+      const canEdit = currentUser && (currentUser.is_admin || p.created_by_id === currentUser.id);
+      return `
+        <div class="user-item">
+          <div class="user-main">
+            <div class="user-identity">
+              <div class="username">${p.name}</div>
+              <span class="admin-badge">${p.acronym}</span>
+            </div>
           </div>
+          ${canEdit ? `
+            <div class="user-actions">
+              <button onclick="editProjectUsers(${p.id})">users</button>
+              <button onclick="deleteMyProject(${p.id}, '${p.name}')">delete</button>
+            </div>
+          ` : ''}
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   } catch (error) {
     console.error('Error loading projects:', error);
+  }
+}
+
+document.getElementById('create-project-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('new-project-name').value.trim();
+  const acronym = document.getElementById('new-project-acronym').value.trim().toUpperCase();
+
+  if (!name || !acronym) return;
+  if (acronym.length !== 3) {
+    alert('project code must be exactly 3 characters');
+    return;
+  }
+
+  const response = await fetch('/api/me/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, acronym }),
+  });
+
+  if (response.ok) {
+    document.getElementById('create-project-form').reset();
+    loadMyProjectsList();
+  } else {
+    const error = await response.json();
+    alert(error.detail || 'failed to create project');
+  }
+});
+
+async function editProjectUsers(projectId) {
+  editingProjectId = projectId;
+  await loadAllUsers();
+
+  const response = await fetch(`/api/projects/${projectId}/users`);
+  const projectUsers = await response.json();
+  const selectedIds = projectUsers.map(u => u.id);
+
+  const container = document.getElementById('project-users-list');
+  container.innerHTML = allUsers.map(u => {
+    const isAdmin = u.username === 'admin';
+    const checked = isAdmin || selectedIds.includes(u.id);
+    return `
+      <label class="user-checkbox">
+        <input type="checkbox" value="${u.id}" ${checked ? 'checked' : ''} ${isAdmin ? 'disabled' : ''}>
+        ${u.username}
+      </label>
+    `;
+  }).join('');
+
+  document.getElementById('project-modal').classList.remove('hidden');
+}
+
+async function saveProjectUsers() {
+  const selected = Array.from(
+    document.querySelectorAll('#project-users-list input:checked, #project-users-list input:disabled')
+  ).map(cb => parseInt(cb.value));
+
+  const response = await fetch(`/api/me/projects/${editingProjectId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_ids: selected }),
+  });
+
+  if (response.ok) {
+    closeProjectModal();
+    loadMyProjectsList();
+  } else {
+    const error = await response.json();
+    alert(error.detail || 'failed to update project');
+  }
+}
+
+function closeProjectModal() {
+  document.getElementById('project-modal').classList.add('hidden');
+  editingProjectId = null;
+}
+
+document.getElementById('project-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('project-modal')) closeProjectModal();
+});
+
+async function deleteMyProject(projectId, projectName) {
+  if (!confirm(`delete project ${projectName}?`)) return;
+
+  const response = await fetch(`/api/me/projects/${projectId}`, { method: 'DELETE' });
+  if (response.ok) {
+    loadMyProjectsList();
+  } else {
+    const error = await response.json();
+    alert(error.detail || 'failed to delete project');
   }
 }
 
@@ -167,7 +289,7 @@ async function logout() {
 
 // --- init ---
 
+loadCurrentUser();
 loadFont();
 loadMode();
-loadMyProjects();
 loadApiKeys();

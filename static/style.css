@@ -530,6 +530,7 @@ main {
 #users-container,
 #projects-container,
 #my-projects-container,
+#my-projects-list,
 #api-keys-container {
   padding: 0 20px 20px 20px;
   flex: 1;
