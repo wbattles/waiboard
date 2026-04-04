@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>waiboard - login</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>waiboard</h1>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="username" autocomplete="username" required />
+        <input type="password" id="password" placeholder="password" autocomplete="current-password" required />
+        <button type="submit">login</button>
+      </form>
+      <div id="error-message" class="error hidden"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+      
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ username, password })
+        });
+        
+        if (response.ok) {
+          window.location.href = '/';
+        } else {
+          const error = await response.json();
+          errorDiv.textContent = error.detail || 'login failed';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorDiv.textContent = 'connection error';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+
+    // Trigger first-time setup check (creates admin if needed)
+    fetch('/api/first-time-setup');
+  </script>
+</body>
+</html>

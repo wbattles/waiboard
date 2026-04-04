@@ -11,15 +11,22 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: space-between;
   padding: 12px 16px;
   border-bottom: 1px solid #000;
   flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 main {
@@ -178,3 +185,257 @@ main {
   right: 0;
   bottom: 0;
 }
+
+/* login page */
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.login-box {
+  width: 300px;
+  padding: 32px;
+  border: 1px solid #000;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-box h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.login-box input {
+  width: 100%;
+  border: 1px solid #000;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.875rem;
+}
+
+.error {
+  color: #000;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.info {
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.hidden {
+  display: none;
+}
+
+/* admin page */
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-main {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.admin-tabs {
+  display: flex;
+  border-bottom: 1px solid #000;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: inherit;
+  min-width: 80px;
+  text-align: center;
+}
+
+.tab-btn.active {
+  border-bottom-color: #000;
+}
+
+.tab-content {
+  padding: 24px;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tab-panel {
+  display: none;
+  width: 100%;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-panel h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.settings-section {
+  padding: 16px;
+  border: 1px solid #000;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.users-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  height: 100%;
+}
+
+.create-user-panel {
+  padding: 20px;
+  border: 1px solid #000;
+  height: fit-content;
+}
+
+.create-user-panel h3 {
+  margin-bottom: 16px;
+}
+
+.create-user-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-user-panel input[type="text"],
+.create-user-panel input[type="password"] {
+  border: 1px solid #000;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.create-user-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.create-user-panel button {
+  margin-top: 4px;
+}
+
+.user-list-panel {
+  border: 1px solid #000;
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+}
+
+.user-list-panel h3 {
+  padding: 16px 20px 0 20px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #000;
+  padding-bottom: 12px;
+  flex-shrink: 0;
+}
+
+#users-container {
+  padding: 0 20px 20px 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid #000;
+  gap: 16px;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-item:first-child {
+  padding-top: 0;
+}
+
+.user-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+
+.username {
+  font-weight: 500;
+  font-size: 0.875rem;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.user-activity {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.admin-badge {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border: 1px solid #000;
+}
+
+.minion-badge {
+  font-size: 0.7rem;
+  padding: 1px 5px;
+  border: 1px solid #000;
+}
+
+.user-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* Remove button styling - use browser defaults */

@@ -173,4 +173,28 @@ document.getElementById("ticket-title").addEventListener("keydown", e => {
   if (e.key === "Enter") submitTicket();
 });
 
+async function logout() {
+  try {
+    await fetch('/api/logout', { method: 'POST' });
+  } finally {
+    window.location.href = '/login';
+  }
+}
+
+async function checkUserStatus() {
+  try {
+    const response = await fetch('/api/current-user');
+    if (response.ok) {
+      const user = await response.json();
+      if (user.is_admin) {
+        document.getElementById('admin-btn').classList.remove('hidden');
+      }
+    }
+  } catch (error) {
+    // User is not logged in or not admin, admin button stays hidden
+  }
+}
+
+// Initialize the app
+checkUserStatus();
 loadTickets();
