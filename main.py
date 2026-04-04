@@ -35,6 +35,7 @@ class TicketUpdate(BaseModel):
     column: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
+    assigned_user_id: Optional[int] = None
 
 
 class UserCreate(BaseModel):
@@ -53,6 +54,8 @@ def ticket_to_dict(t: Ticket) -> dict:
         "title": t.title,
         "description": t.description,
         "column": t.column,
+        "assigned_user_id": t.assigned_user_id,
+        "assigned_user": t.assigned_user.username if t.assigned_user else None,
     }
 
 
@@ -104,6 +107,14 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
     }
 
 
+@app.get("/api/users")
+def get_all_users(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    users = db.query(User).all()
+    return [{"id": u.id, "username": u.username} for u in users]
+
+
 # Admin endpoints
 
 
@@ -130,9 +141,9 @@ def create_user(
     db: Session = Depends(get_db),
 ):
     # Validate username length
-    if len(user_data.username) > 30:
+    if len(user_data.username) > 15:
         raise HTTPException(
-            status_code=400, detail="Username must be 30 characters or less"
+            status_code=400, detail="Username must be 15 characters or less"
         )
 
     # Check if username already exists
@@ -241,6 +252,16 @@ def update_ticket(
         db_ticket.title = ticket.title
     if ticket.description is not None:
         db_ticket.description = ticket.description
+    if ticket.assigned_user_id is not None:
+        # Validate that the user exists
+        if ticket.assigned_user_id == 0:  # 0 means unassign
+            db_ticket.assigned_user_id = None
+        else:
+            user_exists = (
+                db.query(User).filter(User.id == ticket.assigned_user_id).first()
+            )
+            if user_exists:
+                db_ticket.assigned_user_id = ticket.assigned_user_id
     db.commit()
     db.refresh(db_ticket)
     return ticket_to_dict(db_ticket)

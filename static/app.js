@@ -26,9 +26,21 @@ function renderTicket(ticket) {
   const div = document.createElement("div");
   div.className = "ticket";
 
+  const titleRow = document.createElement("div");
+  titleRow.className = "ticket-title-row";
+  
   const title = document.createElement("div");
   title.className = "ticket-title";
   title.textContent = ticket.title;
+  
+  const assignedUser = document.createElement("div");
+  assignedUser.className = "ticket-assigned";
+  if (ticket.assigned_user) {
+    assignedUser.textContent = ticket.assigned_user;
+  }
+  
+  titleRow.appendChild(title);
+  titleRow.appendChild(assignedUser);
 
   const bottom = document.createElement("div");
   bottom.className = "ticket-bottom";
@@ -43,7 +55,7 @@ function renderTicket(ticket) {
   });
   select.addEventListener("change", () => moveTicket(ticket.id, select.value));
 
-  div.appendChild(title);
+  div.appendChild(titleRow);
 
   const desc = document.createElement("div");
   desc.className = "ticket-desc";
@@ -62,25 +74,67 @@ function renderTicket(ticket) {
 
 // --- view modal ---
 
-function openViewModal(ticket) {
+async function openViewModal(ticket) {
   viewingTicket = ticket;
 
   document.getElementById("view-title").textContent = ticket.title;
   document.getElementById("view-desc").innerText = ticket.description;
 
-  const select = document.getElementById("view-column");
-  select.innerHTML = "";
+  // Setup column dropdown
+  const columnSelect = document.getElementById("view-column");
+  columnSelect.innerHTML = "";
   COLUMNS.forEach(col => {
     const opt = document.createElement("option");
     opt.value = col.id;
     opt.textContent = col.label;
     if (col.id === ticket.column) opt.selected = true;
-    select.appendChild(opt);
+    columnSelect.appendChild(opt);
   });
+  columnSelect.onchange = () => moveTicket(ticket.id, columnSelect.value);
 
-  select.onchange = () => moveTicket(ticket.id, select.value);
+  // Setup assignment dropdown
+  await setupAssignmentDropdown(ticket);
 
   document.getElementById("view-modal").classList.remove("hidden");
+}
+
+async function setupAssignmentDropdown(ticket) {
+  try {
+    const response = await fetch('/api/users');
+    const users = await response.json();
+    
+    const assignSelect = document.getElementById("view-assigned");
+    assignSelect.innerHTML = "";
+    
+    // Add unassigned option
+    const unassignedOpt = document.createElement("option");
+    unassignedOpt.value = "0";
+    unassignedOpt.textContent = "unassigned";
+    if (!ticket.assigned_user_id) unassignedOpt.selected = true;
+    assignSelect.appendChild(unassignedOpt);
+    
+    // Add user options
+    users.forEach(user => {
+      const opt = document.createElement("option");
+      opt.value = user.id;
+      opt.textContent = user.username;
+      if (ticket.assigned_user_id === user.id) opt.selected = true;
+      assignSelect.appendChild(opt);
+    });
+    
+    assignSelect.onchange = () => assignUser(ticket.id, parseInt(assignSelect.value));
+  } catch (error) {
+    console.error('Failed to load users:', error);
+  }
+}
+
+async function assignUser(ticketId, userId) {
+  await fetch(`/api/tickets/${ticketId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assigned_user_id: userId }),
+  });
+  loadTickets();
 }
 
 function closeViewModal() {
