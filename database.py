@@ -1,7 +1,17 @@
 import os
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Text,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Table,
+)
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 db_path = os.getenv("DATABASE_PATH", "./waiboard.db")
 engine = create_engine(
@@ -9,6 +19,14 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# Many-to-many relationship between users and projects
+user_projects = Table(
+    "user_projects",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+)
 
 
 class User(Base):
@@ -20,6 +38,22 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    projects = relationship("Project", secondary=user_projects, back_populates="users")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    acronym = Column(String(3), unique=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    users = relationship("User", secondary=user_projects, back_populates="projects")
+    tickets = relationship(
+        "Ticket", back_populates="project", cascade="all, delete-orphan"
+    )
+
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -29,6 +63,11 @@ class Ticket(Base):
     description = Column(Text, default="")
     column = Column(String, default="todo")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    project = relationship("Project", back_populates="tickets")
+    assigned_user = relationship("User")
 
 
 def init_db():

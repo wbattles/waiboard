@@ -12,6 +12,9 @@
     <div class="header-left">
       <button onclick="openModal()">new</button>
       <span class="app-name">waiboard</span>
+      <select id="project-selector" onchange="switchProject()">
+        <option value="">select project</option>
+      </select>
     </div>
     <div class="header-actions">
       <button id="admin-btn" onclick="window.location.href='/admin'" class="hidden">admin</button>
@@ -46,6 +49,9 @@
       <div id="view-title" class="view-title"></div>
       <div id="view-desc" class="view-desc"></div>
       <select id="view-column"></select>
+      <select id="ticket-assignee">
+        <option value="0">unassigned</option>
+      </select>
       <div class="modal-actions">
         <button onclick="openEditFromView()">edit</button>
         <button onclick="closeViewModal()">close</button>

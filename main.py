@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import timedelta
 
-from database import init_db, get_db, Ticket, User
+from database import init_db, get_db, Ticket, User, Project
 from auth import (
     authenticate_user,
     create_access_token,
@@ -35,6 +35,7 @@ class TicketUpdate(BaseModel):
     column: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
+    assigned_user_id: Optional[int] = None
 
 
 class UserCreate(BaseModel):
@@ -47,13 +48,42 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+class ProjectCreate(BaseModel):
+    name: str
+    acronym: str
+    user_ids: list[int] = []
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    acronym: Optional[str] = None
+    user_ids: Optional[list[int]] = None
+
+
 def ticket_to_dict(t: Ticket) -> dict:
-    return {
+    result = {
         "id": t.id,
         "title": t.title,
         "description": t.description,
         "column": t.column,
     }
+
+    # Add project info if available
+    if t.project:
+        result["project"] = {
+            "id": t.project.id,
+            "name": t.project.name,
+            "acronym": t.project.acronym,
+        }
+
+    # Add assigned user info if available
+    if t.assigned_user:
+        result["assigned_user"] = {
+            "id": t.assigned_user.id,
+            "username": t.assigned_user.username,
+        }
+
+    return result
 
 
 # Auth endpoints
@@ -202,23 +232,176 @@ def delete_user(
     return {"message": "User deleted"}
 
 
+# Admin project endpoints
+
+
+@app.get("/api/admin/projects")
+def get_all_projects(
+    admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)
+):
+    projects = db.query(Project).all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "acronym": p.acronym,
+            "user_count": len(p.users),
+            "users": [{"id": u.id, "username": u.username} for u in p.users],
+        }
+        for p in projects
+    ]
+
+
+@app.post("/api/admin/projects", status_code=201)
+def create_project(
+    project: ProjectCreate,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+
+    # Check if project with same name or acronym exists
+    existing = (
+        db.query(Project)
+        .filter((Project.name == project.name) | (Project.acronym == project.acronym))
+        .first()
+    )
+    if existing:
+        raise HTTPException(
+            status_code=400, detail="Project with this name or acronym already exists"
+        )
+
+    db_project = Project(name=project.name, acronym=project.acronym)
+
+    # Add users to project
+    if project.user_ids:
+        users = db.query(User).filter(User.id.in_(project.user_ids)).all()
+        db_project.users = users
+
+    # Always add the admin user
+    admin_user_db = db.query(User).filter(User.username == "admin").first()
+    if admin_user_db and admin_user_db not in db_project.users:
+        db_project.users.append(admin_user_db)
+
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+
+    return {
+        "id": db_project.id,
+        "name": db_project.name,
+        "acronym": db_project.acronym,
+        "user_count": len(db_project.users),
+        "users": [{"id": u.id, "username": u.username} for u in db_project.users],
+    }
+
+
+@app.patch("/api/admin/projects/{project_id}")
+def update_project(
+    project_id: int,
+    project: ProjectUpdate,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+
+    db_project = db.query(Project).filter(Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project.name is not None:
+        db_project.name = project.name
+    if project.acronym is not None:
+        db_project.acronym = project.acronym
+    if project.user_ids is not None:
+        users = db.query(User).filter(User.id.in_(project.user_ids)).all()
+        # Always ensure admin user stays assigned
+        admin_user_db = db.query(User).filter(User.username == "admin").first()
+        if admin_user_db and admin_user_db not in users:
+            users.append(admin_user_db)
+        db_project.users = users
+
+    db.commit()
+    db.refresh(db_project)
+
+    return {
+        "id": db_project.id,
+        "name": db_project.name,
+        "acronym": db_project.acronym,
+        "user_count": len(db_project.users),
+        "users": [{"id": u.id, "username": u.username} for u in db_project.users],
+    }
+
+
+@app.delete("/api/admin/projects/{project_id}")
+def delete_project(
+    project_id: int,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+
+    db_project = db.query(Project).filter(Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    db.delete(db_project)
+    db.commit()
+    return {"message": "Project deleted"}
+
+
 # Ticket endpoints (now protected)
 
 
 @app.get("/api/tickets")
 def get_tickets(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return [ticket_to_dict(t) for t in db.query(Ticket).all()]
+    # Get user's projects (admins have access to all projects)
+    if current_user.is_admin:
+        # Admin can see all tickets
+        query = db.query(Ticket)
+        if project_id:
+            query = query.filter(Ticket.project_id == project_id)
+    else:
+        user_project_ids = [p.id for p in current_user.projects]
+
+        if not user_project_ids:
+            return []  # User has no projects
+
+        query = db.query(Ticket).filter(Ticket.project_id.in_(user_project_ids))
+
+        if project_id:
+            # Verify user has access to this project
+            if project_id not in user_project_ids:
+                raise HTTPException(
+                    status_code=403, detail="Access denied to this project"
+                )
+            query = query.filter(Ticket.project_id == project_id)
+
+    return [ticket_to_dict(t) for t in query.all()]
 
 
 @app.post("/api/tickets", status_code=201)
 def create_ticket(
     ticket: TicketCreate,
+    project_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    db_ticket = Ticket(title=ticket.title, description=ticket.description)
+    # Verify the project exists
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Verify user has access to this project (admins have access to all projects)
+    if not current_user.is_admin:
+        user_project_ids = [p.id for p in current_user.projects]
+        if project_id not in user_project_ids:
+            raise HTTPException(status_code=403, detail="Access denied to this project")
+
+    db_ticket = Ticket(
+        title=ticket.title, description=ticket.description, project_id=project_id
+    )
     db.add(db_ticket)
     db.commit()
     db.refresh(db_ticket)
@@ -235,12 +418,29 @@ def update_ticket(
     db_ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not db_ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Verify user has access to this ticket's project (admins have access to all)
+    if not current_user.is_admin:
+        user_project_ids = [p.id for p in current_user.projects]
+        if db_ticket.project_id not in user_project_ids:
+            raise HTTPException(status_code=403, detail="Access denied to this ticket")
+
     if ticket.column is not None and ticket.column in COLUMNS:
         db_ticket.column = ticket.column
     if ticket.title is not None:
         db_ticket.title = ticket.title
     if ticket.description is not None:
         db_ticket.description = ticket.description
+    if ticket.assigned_user_id is not None:
+        # Validate that the user exists
+        if ticket.assigned_user_id == 0:  # 0 means unassign
+            db_ticket.assigned_user_id = None
+        else:
+            user_exists = (
+                db.query(User).filter(User.id == ticket.assigned_user_id).first()
+            )
+            if user_exists:
+                db_ticket.assigned_user_id = ticket.assigned_user_id
     db.commit()
     db.refresh(db_ticket)
     return ticket_to_dict(db_ticket)
@@ -255,9 +455,43 @@ def delete_ticket(
     db_ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not db_ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Verify user has access to this ticket's project (admins have access to all)
+    if not current_user.is_admin:
+        user_project_ids = [p.id for p in current_user.projects]
+        if db_ticket.project_id not in user_project_ids:
+            raise HTTPException(status_code=403, detail="Access denied to this ticket")
+
     db.delete(db_ticket)
     db.commit()
     return {"ok": True}
+
+
+@app.get("/api/projects")
+def get_user_projects(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    if current_user.is_admin:
+        # Admin can see all projects
+        projects = db.query(Project).all()
+        return [{"id": p.id, "name": p.name, "acronym": p.acronym} for p in projects]
+    else:
+        return [
+            {"id": p.id, "name": p.name, "acronym": p.acronym}
+            for p in current_user.projects
+        ]
+
+
+@app.get("/api/projects/{project_id}/users")
+def get_project_users(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return [{"id": u.id, "username": u.username} for u in project.users]
 
 
 # Route handlers for protected pages
