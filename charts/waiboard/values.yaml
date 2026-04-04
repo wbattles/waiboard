@@ -14,3 +14,14 @@ persistence:
   size: 1Gi
   storageClass: ""
   accessMode: ReadWriteOnce
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: waiboard.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
