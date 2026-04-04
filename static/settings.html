@@ -36,22 +36,34 @@
               </form>
             </div>
 
+            <div class="user-list-panel api-keys-panel">
+              <h3>api keys</h3>
+              <div id="api-keys-container"></div>
+              <div class="api-keys-footer">
+                <button onclick="generateApiKey()">generate new key</button>
+              </div>
+            </div>
+
             <div class="settings-panel">
               <h3>display</h3>
-              <label>font</label>
-              <select id="font-select" onchange="changeFont()">
-                <option value="system-ui, -apple-system, sans-serif">system (default)</option>
-                <option value="Georgia, serif">georgia</option>
-                <option value="Courier New, monospace">courier new</option>
-                <option value="Verdana, sans-serif">verdana</option>
-                <option value="Trebuchet MS, sans-serif">trebuchet ms</option>
-                <option value="Palatino, serif">palatino</option>
-              </select>
-              <label>mode</label>
-              <select id="mode-select" onchange="changeMode()">
-                <option value="light">light</option>
-                <option value="dark">dark</option>
-              </select>
+              <div class="settings-row">
+                <label>font</label>
+                <select id="font-select" onchange="changeFont()">
+                  <option value="system-ui, -apple-system, sans-serif">system (default)</option>
+                  <option value="Georgia, serif">georgia</option>
+                  <option value="Courier New, monospace">courier new</option>
+                  <option value="Verdana, sans-serif">verdana</option>
+                  <option value="Trebuchet MS, sans-serif">trebuchet ms</option>
+                  <option value="Palatino, serif">palatino</option>
+                </select>
+              </div>
+              <div class="settings-row">
+                <label>mode</label>
+                <select id="mode-select" onchange="changeMode()">
+                  <option value="light">light</option>
+                  <option value="dark">dark</option>
+                </select>
+              </div>
             </div>
           </div>
 

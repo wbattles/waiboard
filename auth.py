@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends, Cookie
+from fastapi import HTTPException, status, Depends, Cookie, Header
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
-from database import get_db, User
+from database import get_db, User, ApiKey
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,7 +50,9 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Use
 
 
 def get_current_user(
-    session_token: Optional[str] = Cookie(None), db: Session = Depends(get_db)
+    session_token: Optional[str] = Cookie(None),
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,6 +60,14 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    # Try API key first
+    if x_api_key and isinstance(x_api_key, str):
+        api_key = db.query(ApiKey).filter(ApiKey.key == x_api_key).first()
+        if api_key:
+            return api_key.user
+        raise credentials_exception
+
+    # Fall back to session cookie
     if not session_token:
         raise credentials_exception
 

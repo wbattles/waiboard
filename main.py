@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import timedelta
 
-from database import init_db, get_db, Ticket, User, Project
+from database import init_db, get_db, Ticket, User, Project, ApiKey
 from auth import (
     authenticate_user,
     create_access_token,
@@ -64,11 +64,11 @@ class ProjectUpdate(BaseModel):
 def ticket_to_dict(t: Ticket) -> dict:
     result = {
         "id": t.id,
+        "ticket_number": t.ticket_number,
         "title": t.title,
         "description": t.description,
         "column": t.column,
         "assigned_user_id": t.assigned_user_id,
-        "assigned_user": t.assigned_user.username if t.assigned_user else None,
     }
 
     # Add project info if available
@@ -153,6 +153,54 @@ def change_my_password(
     current_user.hashed_password = get_password_hash(data.new_password)
     db.commit()
     return {"message": "password updated"}
+
+
+@app.get("/api/me/api-keys")
+def get_my_api_keys(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    keys = db.query(ApiKey).filter(ApiKey.user_id == current_user.id).all()
+    return [
+        {
+            "id": k.id,
+            "key": k.key[:8] + "..." if len(k.key) > 8 else k.key,
+            "created_at": k.created_at.isoformat() if k.created_at else None,
+        }
+        for k in keys
+    ]
+
+
+@app.post("/api/me/api-keys", status_code=201)
+def create_api_key(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    import secrets
+
+    raw_key = secrets.token_hex(32)
+    api_key = ApiKey(key=raw_key, user_id=current_user.id)
+    db.add(api_key)
+    db.commit()
+    db.refresh(api_key)
+    # Return full key only on creation
+    return {"id": api_key.id, "key": raw_key}
+
+
+@app.delete("/api/me/api-keys/{key_id}")
+def delete_api_key(
+    key_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    api_key = (
+        db.query(ApiKey)
+        .filter(ApiKey.id == key_id, ApiKey.user_id == current_user.id)
+        .first()
+    )
+    if not api_key:
+        raise HTTPException(status_code=404, detail="api key not found")
+    db.delete(api_key)
+    db.commit()
+    return {"message": "api key deleted"}
 
 
 @app.get("/api/users")
@@ -428,8 +476,20 @@ def create_ticket(
         if project_id not in user_project_ids:
             raise HTTPException(status_code=403, detail="Access denied to this project")
 
+    # Get next ticket number for this project
+    from sqlalchemy import func
+
+    max_num = (
+        db.query(func.max(Ticket.ticket_number))
+        .filter(Ticket.project_id == project_id)
+        .scalar()
+    ) or 0
+
     db_ticket = Ticket(
-        title=ticket.title, description=ticket.description, project_id=project_id
+        title=ticket.title,
+        description=ticket.description,
+        project_id=project_id,
+        ticket_number=max_num + 1,
     )
     db.add(db_ticket)
     db.commit()

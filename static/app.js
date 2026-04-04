@@ -119,10 +119,10 @@ function renderTicket(ticket) {
   bottom.appendChild(select);
   bottom.appendChild(viewBtn);
 
-  if (ticket.project) {
+  if (ticket.project && ticket.ticket_number) {
     const code = document.createElement("span");
     code.className = "ticket-code";
-    code.textContent = ticket.project.acronym;
+    code.textContent = ticket.project.acronym + "-" + ticket.ticket_number;
     bottom.appendChild(code);
   }
 

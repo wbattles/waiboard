@@ -30,6 +30,49 @@ document.getElementById('password-form').addEventListener('submit', async e => {
   }
 });
 
+// --- api keys ---
+
+async function loadApiKeys() {
+  try {
+    const response = await fetch('/api/me/api-keys');
+    if (!response.ok) return;
+    const keys = await response.json();
+    const container = document.getElementById('api-keys-container');
+
+    if (keys.length === 0) {
+      container.innerHTML = '<div class="user-activity">no api keys</div>';
+      return;
+    }
+
+    container.innerHTML = keys.map(k => `
+      <div class="user-item">
+        <div class="user-main">
+          <div class="api-key-value">${k.key}</div>
+        </div>
+        <div class="user-actions">
+          <button onclick="deleteApiKey(${k.id})">delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('Error loading api keys:', error);
+  }
+}
+
+async function generateApiKey() {
+  const response = await fetch('/api/me/api-keys', { method: 'POST' });
+  if (response.ok) {
+    const data = await response.json();
+    prompt('copy this key — it will not be shown again:', data.key);
+    loadApiKeys();
+  }
+}
+
+async function deleteApiKey(id) {
+  const response = await fetch(`/api/me/api-keys/${id}`, { method: 'DELETE' });
+  if (response.ok) loadApiKeys();
+}
+
 // --- my projects ---
 
 async function loadMyProjects() {
@@ -112,3 +155,4 @@ async function logout() {
 loadFont();
 loadMode();
 loadMyProjects();
+loadApiKeys();

@@ -381,13 +381,14 @@ main {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 24px;
-  height: 100%;
 }
 
 .settings-left {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 300px;
+  height: 500px;
 }
 
 .settings-panel {
@@ -397,6 +398,8 @@ main {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .settings-panel h3 {
@@ -423,6 +426,22 @@ main {
   font-size: 0.875rem;
 }
 
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-row label {
+  flex-shrink: 0;
+  width: 40px;
+}
+
+.settings-row select {
+  flex: 1;
+  min-width: 0;
+}
+
 .settings-panel select {
   width: 100%;
   box-sizing: border-box;
@@ -430,6 +449,32 @@ main {
 
 .settings-panel button {
   margin-top: 4px;
+}
+
+.api-key-value {
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+.api-keys-panel.user-list-panel {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.api-keys-panel h3 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 8px;
+}
+
+.api-keys-footer {
+  padding: 8px 20px 12px 20px;
+  flex-shrink: 0;
+}
+
+body.dark .api-key-item {
+  border-bottom-color: #fff;
 }
 
 .users-layout,
@@ -501,7 +546,8 @@ main {
 
 #users-container,
 #projects-container,
-#my-projects-container {
+#my-projects-container,
+#api-keys-container {
   padding: 0 20px 20px 20px;
   flex: 1;
   overflow-y: auto;
