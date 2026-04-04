@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
+    Table,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
@@ -18,6 +19,14 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# Many-to-many relationship between users and projects
+user_projects = Table(
+    "user_projects",
+    Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+)
 
 
 class User(Base):
@@ -29,6 +38,23 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    projects = relationship("Project", secondary=user_projects, back_populates="users")
+    assigned_tickets = relationship("Ticket", back_populates="assigned_user")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    acronym = Column(String(3), unique=True, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    users = relationship("User", secondary=user_projects, back_populates="projects")
+    tickets = relationship(
+        "Ticket", back_populates="project", cascade="all, delete-orphan"
+    )
+
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -37,19 +63,42 @@ class Ticket(Base):
     title = Column(String, nullable=False)
     description = Column(Text, default="")
     column = Column(String, default="todo")
-    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
-    # Relationship to User
+    project = relationship("Project", back_populates="tickets")
     assigned_user = relationship("User", back_populates="assigned_tickets")
-
-
-# Add back reference to User model
-User.assigned_tickets = relationship("Ticket", back_populates="assigned_user")
 
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    _migrate()
+
+
+def _migrate():
+    """add missing columns to existing tables"""
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # get existing columns on tickets table
+    cursor.execute("PRAGMA table_info(tickets)")
+    existing = {row[1] for row in cursor.fetchall()}
+
+    if "project_id" not in existing:
+        cursor.execute(
+            "ALTER TABLE tickets ADD COLUMN project_id INTEGER REFERENCES projects(id)"
+        )
+
+    if "assigned_user_id" not in existing:
+        cursor.execute(
+            "ALTER TABLE tickets ADD COLUMN assigned_user_id INTEGER REFERENCES users(id)"
+        )
+
+    conn.commit()
+    conn.close()
 
 
 def get_db():

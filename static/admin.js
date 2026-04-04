@@ -194,6 +194,11 @@ function showTab(tabName) {
   // Show selected tab
   document.getElementById(`${tabName}-tab`).classList.add('active');
   event.target.classList.add('active');
+  
+  // Initialize projects tab when shown
+  if (tabName === 'projects') {
+    initializeProjectsTab();
+  }
 }
 
 async function logout() {
