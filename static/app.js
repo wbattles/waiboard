@@ -45,12 +45,10 @@ function renderTicket(ticket) {
 
   div.appendChild(title);
 
-  if (ticket.description) {
-    const desc = document.createElement("div");
-    desc.className = "ticket-desc";
-    desc.innerText = ticket.description;
-    div.appendChild(desc);
-  }
+  const desc = document.createElement("div");
+  desc.className = "ticket-desc";
+  desc.innerText = ticket.description || "";
+  div.appendChild(desc);
 
   const viewBtn = document.createElement("button");
   viewBtn.textContent = "view";
@@ -99,10 +97,12 @@ async function moveTicket(id, column) {
   loadTickets();
 }
 
-async function deleteFromView() {
-  await fetch(`/api/tickets/${viewingTicket.id}`, { method: "DELETE" });
-  closeViewModal();
-  loadTickets();
+async function deleteTicket() {
+  if (editingId) {
+    await fetch(`/api/tickets/${editingId}`, { method: "DELETE" });
+    closeModal();
+    loadTickets();
+  }
 }
 
 function openEditFromView() {
@@ -112,6 +112,7 @@ function openEditFromView() {
   document.getElementById("modal-heading").textContent = "edit";
   document.getElementById("ticket-title").value = ticket.title;
   document.getElementById("ticket-description").value = ticket.description;
+  document.getElementById("delete-btn").classList.remove("hidden");
   document.getElementById("modal").classList.remove("hidden");
   document.getElementById("ticket-title").focus();
 }
@@ -123,6 +124,7 @@ function openModal() {
   document.getElementById("modal-heading").textContent = "new";
   document.getElementById("ticket-title").value = "";
   document.getElementById("ticket-description").value = "";
+  document.getElementById("delete-btn").classList.add("hidden");
   document.getElementById("modal").classList.remove("hidden");
   document.getElementById("ticket-title").focus();
 }

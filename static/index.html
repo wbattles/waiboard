@@ -42,7 +42,6 @@
       <select id="view-column"></select>
       <div class="modal-actions">
         <button onclick="openEditFromView()">edit</button>
-        <button onclick="deleteFromView()">delete</button>
         <button onclick="closeViewModal()">close</button>
       </div>
     </div>
@@ -57,6 +56,7 @@
       <div class="modal-actions">
         <button onclick="submitTicket()">save</button>
         <button onclick="closeModal()">cancel</button>
+        <button id="delete-btn" onclick="deleteTicket()" class="delete-btn hidden">delete</button>
       </div>
     </div>
   </div>
