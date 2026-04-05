@@ -1,3 +1,39 @@
+// --- confirmation modal ---
+
+let confirmCallback = null;
+
+function showConfirmModal(title, message, callback) {
+  const titleElement = document.getElementById('confirm-title');
+  if (title) {
+    titleElement.textContent = title;
+    titleElement.style.display = 'block';
+  } else {
+    titleElement.style.display = 'none';
+  }
+  document.getElementById('confirm-message').textContent = message;
+  confirmCallback = callback;
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.add('hidden');
+  confirmCallback = null;
+}
+
+function confirmAction() {
+  if (confirmCallback) {
+    confirmCallback();
+  }
+  closeConfirmModal();
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('confirm-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-modal')) closeConfirmModal();
+  });
+});
+
 // --- tabs ---
 
 function showTab(tabName) {
@@ -18,19 +54,25 @@ document.getElementById('password-form').addEventListener('submit', async e => {
   const new_password = document.getElementById('pw-new').value;
   if (!current_password || !new_password) return;
 
-  const response = await fetch('/api/me/password', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ current_password, new_password }),
-  });
+  showConfirmModal('', 'change password?', async () => {
+    try {
+      const response = await fetch('/api/me/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password, new_password }),
+      });
 
-  if (response.ok) {
-    document.getElementById('password-form').reset();
-    alert('password updated');
-  } else {
-    const error = await response.json();
-    alert(error.detail || 'failed to change password');
-  }
+      if (response.ok) {
+        document.getElementById('password-form').reset();
+        showConfirmModal('', 'password updated', null);
+      } else {
+        const error = await response.json();
+        showConfirmModal('', error.detail || 'failed to change password', null);
+      }
+    } catch (error) {
+      showConfirmModal('', 'failed to change password', null);
+    }
+  });
 });
 
 // --- api keys ---
@@ -156,7 +198,7 @@ document.getElementById('create-project-form').addEventListener('submit', async 
 
   if (!name || !acronym) return;
   if (acronym.length !== 3) {
-    alert('project code must be exactly 3 characters');
+    showConfirmModal('', 'project code must be exactly 3 characters', null);
     return;
   }
 
@@ -171,7 +213,7 @@ document.getElementById('create-project-form').addEventListener('submit', async 
     loadMyProjectsList();
   } else {
     const error = await response.json();
-    alert(error.detail || 'failed to create project');
+    showConfirmModal('', error.detail || 'failed to create project', null);
   }
 });
 
@@ -214,7 +256,7 @@ async function saveProjectUsers() {
     loadMyProjectsList();
   } else {
     const error = await response.json();
-    alert(error.detail || 'failed to update project');
+    showConfirmModal('', error.detail || 'failed to update project', null);
   }
 }
 
@@ -228,15 +270,19 @@ document.getElementById('project-modal').addEventListener('click', e => {
 });
 
 async function deleteMyProject(projectId, projectName) {
-  if (!confirm(`delete project ${projectName}?`)) return;
-
-  const response = await fetch(`/api/me/projects/${projectId}`, { method: 'DELETE' });
-  if (response.ok) {
-    loadMyProjectsList();
-  } else {
-    const error = await response.json();
-    alert(error.detail || 'failed to delete project');
-  }
+  showConfirmModal('', `delete project ${projectName}?`, async () => {
+    try {
+      const response = await fetch(`/api/me/projects/${projectId}`, { method: 'DELETE' });
+      if (response.ok) {
+        loadMyProjectsList();
+      } else {
+        const error = await response.json();
+        showConfirmModal('', error.detail || 'failed to delete project', null);
+      }
+    } catch (error) {
+      showConfirmModal('', 'failed to delete project', null);
+    }
+  });
 }
 
 // --- display: font ---

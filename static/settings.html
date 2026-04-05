@@ -105,6 +105,18 @@
     </div>
   </div>
 
+  <!-- confirmation modal -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2 id="confirm-title">confirm action</h2>
+      <p id="confirm-message">are you sure?</p>
+      <div class="modal-actions">
+        <button id="confirm-ok" onclick="confirmAction()">confirm</button>
+        <button onclick="closeConfirmModal()">cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- edit project modal -->
   <div id="project-modal" class="modal hidden">
     <div class="modal-box">
