@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import timedelta
+from pathlib import Path
 
 from database import init_db, get_db, Ticket, User, Project, ApiKey
 from auth import (
@@ -751,12 +752,25 @@ def serve_settings(request: Request):
 # Mount static files for CSS/JS (these don't need auth)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+STATIC_DIR = Path("static")
+
+
+@app.get("/favicon.ico")
+def serve_favicon():
+    favicon_path = STATIC_DIR / "favicon.ico"
+    if favicon_path.exists():
+        return FileResponse(favicon_path)
+    return Response(status_code=204)
+
 
 # Catch-all for other static files
 @app.get("/{file_path:path}")
 def serve_static_files(file_path: str):
     # Allow access to CSS, JS, and other assets
     if file_path.endswith((".css", ".js", ".png", ".jpg", ".ico")):
-        return FileResponse(f"static/{file_path}")
+        asset_path = STATIC_DIR / file_path
+        if asset_path.exists():
+            return FileResponse(asset_path)
+        raise HTTPException(status_code=404, detail="File not found")
     # Redirect everything else to login
     return RedirectResponse("/login")
